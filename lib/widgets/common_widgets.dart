@@ -96,10 +96,11 @@ class CurrencyChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(8, 6, 14, 6),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 2),
         boxShadow: const <BoxShadow>[
           BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 2)),
         ],
@@ -107,11 +108,15 @@ class CurrencyChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(icon, color: color, size: 22),
-          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 8),
           Text('$value',
               style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.w700)),
+                  fontSize: 18, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -131,15 +136,21 @@ class BackCircleButton extends StatelessWidget {
       child: Container(
         width: 56,
         height: 56,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          // Botão de voltar amarelo/dourado, como nos mockups aprovados.
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[AppColors.kidsYellow, AppColors.rewardGold],
+          ),
           shape: BoxShape.circle,
-          boxShadow: <BoxShadow>[
-            BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
+          border: Border.all(color: Colors.white, width: 3),
+          boxShadow: const <BoxShadow>[
+            BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 3)),
           ],
         ),
         child: const Icon(Icons.arrow_back_rounded,
-            size: 30, color: AppColors.kidsBlue),
+            size: 30, color: Color(0xFF6B4A1F)),
       ),
     );
   }
