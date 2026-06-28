@@ -25,3 +25,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/branding/mascot/
+    - assets/avatars/base/boys/
+    - assets/avatars/base/girls/
+    - assets/cosmetics/hats/
+    - assets/cosmetics/glasses/

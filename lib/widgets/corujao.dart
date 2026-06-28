@@ -18,7 +18,13 @@ class Corujao extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: CustomPaint(painter: _CorujaoPainter()),
+      // Arte oficial aprovada; cai para o desenho vetorial se o asset faltar.
+      child: Image.asset(
+        'assets/branding/mascot/mestre_corujao.png',
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) =>
+            CustomPaint(painter: _CorujaoPainter()),
+      ),
     );
   }
 }

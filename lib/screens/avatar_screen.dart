@@ -232,7 +232,15 @@ class _CosmeticCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(cosmetic.icon, size: 34, color: cosmetic.rarity.color),
+            SizedBox(
+              height: 38,
+              child: cosmetic.asset != null
+                  ? Image.asset(cosmetic.asset!,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => Icon(cosmetic.icon,
+                          size: 34, color: cosmetic.rarity.color))
+                  : Icon(cosmetic.icon, size: 34, color: cosmetic.rarity.color),
+            ),
             const SizedBox(height: 2),
             Text(cosmetic.name,
                 maxLines: 1,

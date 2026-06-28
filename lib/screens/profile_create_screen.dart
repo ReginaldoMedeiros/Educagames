@@ -60,11 +60,24 @@ class _ProfileCreateScreenState extends State<ProfileCreateScreen> {
                     width: 150,
                     height: 150,
                     decoration: BoxDecoration(
-                      color: avatarBaseById(_avatarId).color,
+                      gradient: RadialGradient(colors: <Color>[
+                        Color.lerp(
+                            avatarBaseById(_avatarId).color, Colors.white, 0.6)!,
+                        Color.lerp(avatarBaseById(_avatarId).color,
+                            Colors.white, 0.2)!,
+                      ]),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(avatarBaseById(_avatarId).icon,
-                        size: 90, color: Colors.white),
+                    clipBehavior: Clip.antiAlias,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Image.asset(avatarBaseById(_avatarId).asset,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Icon(
+                              Icons.face_rounded,
+                              size: 90,
+                              color: Colors.white)),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text(_name.text.isEmpty ? 'Novo Explorador' : _name.text,
@@ -126,8 +139,10 @@ class _ProfileCreateScreenState extends State<ProfileCreateScreen> {
                               onTap: () => setState(() => _avatarId = a.id),
                               child: Container(
                                 width: 70,
+                                height: 70,
                                 decoration: BoxDecoration(
-                                  color: a.color,
+                                  color: Color.lerp(
+                                      a.color, Colors.white, 0.55),
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: sel
@@ -136,8 +151,16 @@ class _ProfileCreateScreenState extends State<ProfileCreateScreen> {
                                     width: 4,
                                   ),
                                 ),
-                                child:
-                                    Icon(a.icon, size: 44, color: Colors.white),
+                                clipBehavior: Clip.antiAlias,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Image.asset(a.asset,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (_, __, ___) => const Icon(
+                                          Icons.face_rounded,
+                                          size: 40,
+                                          color: Colors.white)),
+                                ),
                               ),
                             );
                           },

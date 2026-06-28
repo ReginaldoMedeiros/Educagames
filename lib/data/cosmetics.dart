@@ -78,6 +78,7 @@ class Cosmetic {
     required this.category,
     required this.rarity,
     required this.icon,
+    this.asset,
   });
 
   final String id;
@@ -86,30 +87,65 @@ class Cosmetic {
   final Rarity rarity;
   final IconData icon;
 
+  /// Caminho do PNG real (folha de sprites fatiada). Quando nulo, usa [icon].
+  final String? asset;
+
   int get price => rarity.price;
 }
 
-/// Catálogo cosmético inicial (amostra do total previsto de ~150 itens).
-const List<Cosmetic> kCosmetics = <Cosmetic>[
-  // Chapéus
-  Cosmetic(id: 'hat_safari', name: 'Chapéu Safari', category: 'hat', rarity: Rarity.common, icon: Icons.emoji_people_rounded),
-  Cosmetic(id: 'hat_party', name: 'Chapéu de Festa', category: 'hat', rarity: Rarity.uncommon, icon: Icons.celebration_rounded),
-  Cosmetic(id: 'hat_crown', name: 'Coroa', category: 'hat', rarity: Rarity.epic, icon: Icons.workspace_premium_rounded),
-  // Óculos
-  Cosmetic(id: 'glasses_round', name: 'Óculos Redondos', category: 'glasses', rarity: Rarity.common, icon: Icons.visibility_rounded),
-  Cosmetic(id: 'glasses_sun', name: 'Óculos de Sol', category: 'glasses', rarity: Rarity.rare, icon: Icons.wb_sunny_rounded),
-  // Roupas
-  Cosmetic(id: 'clothes_explorer', name: 'Roupa de Explorador', category: 'clothes', rarity: Rarity.uncommon, icon: Icons.checkroom_rounded),
-  Cosmetic(id: 'clothes_space', name: 'Traje Espacial', category: 'clothes', rarity: Rarity.epic, icon: Icons.rocket_launch_rounded),
-  // Mochilas
-  Cosmetic(id: 'backpack_adventure', name: 'Mochila de Aventura', category: 'backpack', rarity: Rarity.common, icon: Icons.backpack_rounded),
-  Cosmetic(id: 'backpack_jet', name: 'Mochila a Jato', category: 'backpack', rarity: Rarity.legendary, icon: Icons.rocket_rounded),
-  // Sapatos
-  Cosmetic(id: 'shoes_boots', name: 'Botas de Trilha', category: 'shoes', rarity: Rarity.common, icon: Icons.ice_skating_rounded),
-  Cosmetic(id: 'shoes_sneakers', name: 'Tênis Coloridos', category: 'shoes', rarity: Rarity.uncommon, icon: Icons.directions_run_rounded),
-  // Acessórios
-  Cosmetic(id: 'accessory_compass', name: 'Bússola', category: 'accessory', rarity: Rarity.rare, icon: Icons.explore_rounded),
-  Cosmetic(id: 'accessory_lantern', name: 'Lanterna', category: 'accessory', rarity: Rarity.uncommon, icon: Icons.flashlight_on_rounded),
+/// Distribui raridades de forma estável pelo índice do item.
+Rarity _rarityForIndex(int i) => Rarity.values[i % Rarity.values.length];
+
+/// Gera itens cosméticos a partir das folhas de sprites reais já fatiadas.
+List<Cosmetic> _fromSheet({
+  required String category,
+  required String namePrefix,
+  required String dir,
+  required String filePrefix,
+  required int count,
+  required IconData fallbackIcon,
+}) {
+  return <Cosmetic>[
+    for (int i = 1; i <= count; i++)
+      Cosmetic(
+        id: '${category}_${i.toString().padLeft(2, '0')}',
+        name: '$namePrefix $i',
+        category: category,
+        rarity: _rarityForIndex(i - 1),
+        icon: fallbackIcon,
+        asset: '$dir/${filePrefix}_${i.toString().padLeft(2, '0')}.png',
+      ),
+  ];
+}
+
+/// Catálogo cosmético. Chapéus e óculos usam a arte real aprovada; as demais
+/// categorias seguem como ícones até as folhas serem fatiadas.
+final List<Cosmetic> kCosmetics = <Cosmetic>[
+  ..._fromSheet(
+    category: 'hat',
+    namePrefix: 'Chapéu',
+    dir: 'assets/cosmetics/hats',
+    filePrefix: 'hat',
+    count: 36,
+    fallbackIcon: Icons.emoji_people_rounded,
+  ),
+  ..._fromSheet(
+    category: 'glasses',
+    namePrefix: 'Óculos',
+    dir: 'assets/cosmetics/glasses',
+    filePrefix: 'glasses',
+    count: 25,
+    fallbackIcon: Icons.visibility_rounded,
+  ),
+  // Categorias ainda sem arte fatiada (placeholders por ícone).
+  const Cosmetic(id: 'clothes_explorer', name: 'Roupa de Explorador', category: 'clothes', rarity: Rarity.uncommon, icon: Icons.checkroom_rounded),
+  const Cosmetic(id: 'clothes_space', name: 'Traje Espacial', category: 'clothes', rarity: Rarity.epic, icon: Icons.rocket_launch_rounded),
+  const Cosmetic(id: 'backpack_adventure', name: 'Mochila de Aventura', category: 'backpack', rarity: Rarity.common, icon: Icons.backpack_rounded),
+  const Cosmetic(id: 'backpack_jet', name: 'Mochila a Jato', category: 'backpack', rarity: Rarity.legendary, icon: Icons.rocket_rounded),
+  const Cosmetic(id: 'shoes_boots', name: 'Botas de Trilha', category: 'shoes', rarity: Rarity.common, icon: Icons.ice_skating_rounded),
+  const Cosmetic(id: 'shoes_sneakers', name: 'Tênis Coloridos', category: 'shoes', rarity: Rarity.uncommon, icon: Icons.directions_run_rounded),
+  const Cosmetic(id: 'accessory_compass', name: 'Bússola', category: 'accessory', rarity: Rarity.rare, icon: Icons.explore_rounded),
+  const Cosmetic(id: 'accessory_lantern', name: 'Lanterna', category: 'accessory', rarity: Rarity.uncommon, icon: Icons.flashlight_on_rounded),
 ];
 
 List<Cosmetic> cosmeticsByCategory(String category) =>
