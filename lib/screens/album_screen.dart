@@ -138,11 +138,30 @@ class _StickerSlot extends StatelessWidget {
               width: 2,
             ),
           ),
-          child: Icon(
-            sticker.icon,
-            size: 40,
-            color: collected ? AppColors.kidsGreen : Colors.black26,
-          ),
+          child: sticker.asset != null
+              ? Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: ColorFiltered(
+                    // Coletado: cores reais. Não coletado: silhueta escura.
+                    colorFilter: collected
+                        ? const ColorFilter.mode(
+                            Colors.transparent, BlendMode.dst)
+                        : const ColorFilter.mode(
+                            Colors.black45, BlendMode.srcATop),
+                    child: Image.asset(sticker.asset!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Icon(sticker.icon,
+                            size: 40,
+                            color: collected
+                                ? AppColors.kidsGreen
+                                : Colors.black26)),
+                  ),
+                )
+              : Icon(
+                  sticker.icon,
+                  size: 40,
+                  color: collected ? AppColors.kidsGreen : Colors.black26,
+                ),
         ),
         const SizedBox(height: 4),
         SizedBox(

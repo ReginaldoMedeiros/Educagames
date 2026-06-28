@@ -8,12 +8,16 @@ class StickerDef {
     required this.name,
     required this.category,
     required this.icon,
+    this.asset,
   });
 
   final String id;
   final String name;
   final String category; // animals, dinosaurs, space, ocean, library
   final IconData icon;
+
+  /// PNG real do adesivo (quando a arte estiver disponível); senão usa [icon].
+  final String? asset;
 }
 
 /// Catálogo de adesivos por categoria/mundo.
