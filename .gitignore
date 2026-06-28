@@ -38,6 +38,9 @@ ios/Flutter/Flutter.podspec
 # Coverage
 coverage/
 
+# Claude local settings (pessoal, não versionar)
+.claude/settings.local.json
+
 # Secrets / Firebase (added later)
 google-services.json
 GoogleService-Info.plist
