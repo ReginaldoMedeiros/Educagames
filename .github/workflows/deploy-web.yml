@@ -1,0 +1,57 @@
+name: Build & Deploy Web (preview)
+
+# Compila o Educa Games para web e publica no GitHub Pages,
+# gerando um link que pode ser aberto no navegador do celular.
+
+on:
+  push:
+    branches:
+      - claude/educa-games-product-bible-ncu58l
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Evita deploys concorrentes
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Gera scaffolding web (não toca em lib/)
+        run: flutter create . --platforms=web --project-name educa_games
+
+      - name: Dependências
+        run: flutter pub get
+
+      - name: Build web
+        run: flutter build web --release --base-href "/Educagames/"
+
+      - name: Upload artifact do Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
