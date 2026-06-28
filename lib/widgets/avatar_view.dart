@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../data/cosmetics.dart';
 import '../models/child_profile.dart';
 import '../theme/app_colors.dart';
 
@@ -59,25 +58,16 @@ class AvatarView extends StatelessWidget {
   Widget build(BuildContext context) {
     final AvatarBase base = avatarBaseById(profile.avatarBaseId);
 
-    // Cosméticos equipados com arte (chapéu sobre a cabeça, óculos no rosto).
-    Cosmetic? equippedWithAsset(String category) {
-      final String? id = profile.equipped[category];
-      if (id == null) return null;
-      final Cosmetic? c = cosmeticById(id);
-      return (c != null && c.asset != null) ? c : null;
-    }
-
-    final Cosmetic? hat = equippedWithAsset('hat');
-    final Cosmetic? glasses = equippedWithAsset('glasses');
-
+    // Os avatares aprovados são personagens completos — exibidos inteiros,
+    // sem sobreposição de cosméticos (que não foram desenhados como camadas).
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         gradient: RadialGradient(
           colors: <Color>[
-            Color.lerp(base.color, Colors.white, 0.65)!,
-            Color.lerp(base.color, Colors.white, 0.25)!,
+            Color.lerp(base.color, Colors.white, 0.7)!,
+            Color.lerp(base.color, Colors.white, 0.3)!,
           ],
         ),
         shape: BoxShape.circle,
@@ -86,34 +76,14 @@ class AvatarView extends StatelessWidget {
         ],
       ),
       child: ClipOval(
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: <Widget>[
-            // Avatar base.
-            Padding(
-              padding: EdgeInsets.only(top: size * 0.08),
-              child: Image.asset(
-                base.asset,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) =>
-                    Icon(Icons.face_rounded, size: size * 0.6, color: Colors.white),
-              ),
-            ),
-            // Óculos sobre o rosto (camada).
-            if (glasses != null)
-              Positioned(
-                top: size * 0.30,
-                child: Image.asset(glasses.asset!,
-                    width: size * 0.42, fit: BoxFit.contain),
-              ),
-            // Chapéu sobre a cabeça (camada superior).
-            if (hat != null)
-              Positioned(
-                top: size * 0.04,
-                child: Image.asset(hat.asset!,
-                    width: size * 0.5, fit: BoxFit.contain),
-              ),
-          ],
+        child: Padding(
+          padding: EdgeInsets.only(top: size * 0.08),
+          child: Image.asset(
+            base.asset,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => Icon(Icons.face_rounded,
+                size: size * 0.6, color: Colors.white),
+          ),
         ),
       ),
     );
