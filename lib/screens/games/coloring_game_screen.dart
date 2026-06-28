@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../../data/game_content.dart';
 import '../../models/world.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/common_widgets.dart';
 import 'game_finish.dart';
 
-/// Jogo de Colorir funcional. A área de desenho ocupa ~70% da tela, com uma
-/// grade de células que a criança pinta com a cor selecionada. Inclui desfazer,
-/// limpar e concluir, conforme o documento mestre.
+/// Quantidade de páginas de colorir disponíveis (assets/games/coloring/).
+const int kColoringPages = 25;
+
+/// Jogo de Colorir funcional usando line-art real.
+///
+/// A criança pinta uma camada de células ao fundo; o contorno preto (PNG com
+/// fundo transparente) fica por cima, então as cores aparecem "dentro" do
+/// desenho. Inclui pintar arrastando, desfazer, limpar e concluir.
 class ColoringGameScreen extends StatefulWidget {
   const ColoringGameScreen({super.key, required this.world});
 
@@ -19,75 +23,51 @@ class ColoringGameScreen extends StatefulWidget {
 }
 
 class _ColoringGameScreenState extends State<ColoringGameScreen> {
-  static const int cols = 14;
-  static const int rows = 8;
+  static const int grid = 24; // resolução da pintura (grid x grid)
 
-  late Subject _subject;
-  // Máscara do desenho: true = célula faz parte da figura (pintável).
-  late List<bool> _mask;
-  // Cor atual de cada célula (null = ainda não pintada).
+  late final String _asset;
   late List<Color?> _cells;
-  final List<int> _history = <int>[];
+  final List<int> _history = <int>[]; // índices pintados, em ordem
+  final Map<int, Color?> _prev = <int, Color?>{}; // cor anterior p/ desfazer
   Color _selected = AppColors.paintPalette.first;
 
   @override
   void initState() {
     super.initState();
-    final List<Subject> subjects = subjectsForWorld(widget.world.id);
-    _subject = subjects.isNotEmpty
-        ? subjects[DateTime.now().second % subjects.length]
-        : const Subject(
-            name: 'Desenho', icon: Icons.image_rounded, color: Colors.grey);
-    _buildMask();
+    final int n = 1 + DateTime.now().microsecondsSinceEpoch % kColoringPages;
+    _asset = 'assets/games/coloring/coloring_${n.toString().padLeft(2, '0')}.png';
+    _cells = List<Color?>.filled(grid * grid, null);
   }
 
-  /// Cria uma silhueta simples (losango/centro preenchido) como contorno.
-  void _buildMask() {
-    _mask = List<bool>.filled(cols * rows, false);
-    _cells = List<Color?>.filled(cols * rows, null);
-    final double cx = (cols - 1) / 2;
-    final double cy = (rows - 1) / 2;
-    for (int y = 0; y < rows; y++) {
-      for (int x = 0; x < cols; x++) {
-        final double dx = (x - cx).abs() / (cols / 2);
-        final double dy = (y - cy).abs() / (rows / 2);
-        // Forma arredondada central preenchível.
-        if (dx + dy <= 1.05) {
-          _mask[y * cols + x] = true;
-        }
-      }
-    }
-    _history.clear();
-  }
-
-  void _paint(int index) {
-    if (!_mask[index]) return;
-    if (_cells[index] == _selected) return;
+  void _paintAt(Offset local, double side) {
+    final double cell = side / grid;
+    final int c = (local.dx / cell).floor();
+    final int r = (local.dy / cell).floor();
+    if (c < 0 || c >= grid || r < 0 || r >= grid) return;
+    final int i = r * grid + c;
+    if (_cells[i] == _selected) return;
     setState(() {
-      _history.add(index);
-      _cells[index] = _selected;
+      _prev[i] = _cells[i];
+      _history.add(i);
+      _cells[i] = _selected;
     });
   }
 
   void _undo() {
     if (_history.isEmpty) return;
     setState(() {
-      final int last = _history.removeLast();
-      // Reverte para o estado anterior daquela célula (simplificação: limpa).
-      _cells[last] = null;
+      final int i = _history.removeLast();
+      _cells[i] = _prev[i];
     });
   }
 
   void _clear() {
     setState(() {
-      _cells = List<Color?>.filled(cols * rows, null);
+      _cells = List<Color?>.filled(grid * grid, null);
       _history.clear();
+      _prev.clear();
     });
   }
-
-  int get _paintableCount => _mask.where((bool m) => m).length;
-  int get _paintedCount =>
-      _cells.where((Color? c) => c != null).length;
 
   void _finish() {
     finishActivity(
@@ -101,7 +81,7 @@ class _ColoringGameScreenState extends State<ColoringGameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool canFinish = _paintedCount > 0;
+    final bool canFinish = _history.isNotEmpty;
     return Scaffold(
       body: GradientBackground(
         color: widget.world.color,
@@ -114,19 +94,16 @@ class _ColoringGameScreenState extends State<ColoringGameScreen> {
                   children: <Widget>[
                     const BackCircleButton(),
                     const SizedBox(width: 12),
-                    Text('Colorir: ${_subject.name}',
-                        style: const TextStyle(
+                    const Text('Colorir',
+                        style: TextStyle(
                             fontSize: 22, fontWeight: FontWeight.w800)),
-                    const Spacer(),
-                    Text('$_paintedCount / $_paintableCount',
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
               Expanded(
                 child: Row(
                   children: <Widget>[
-                    // Botões laterais (desfazer / limpar / concluir).
+                    // Botões laterais.
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Column(
@@ -135,12 +112,12 @@ class _ColoringGameScreenState extends State<ColoringGameScreen> {
                           _SideButton(
                               icon: Icons.undo_rounded,
                               label: 'Desfazer',
-                              onTap: _undo),
+                              onTap: _history.isEmpty ? null : _undo),
                           const SizedBox(height: 12),
                           _SideButton(
                               icon: Icons.delete_outline_rounded,
                               label: 'Limpar',
-                              onTap: _clear),
+                              onTap: _history.isEmpty ? null : _clear),
                           const SizedBox(height: 12),
                           _SideButton(
                             icon: Icons.check_circle_rounded,
@@ -151,49 +128,57 @@ class _ColoringGameScreenState extends State<ColoringGameScreen> {
                         ],
                       ),
                     ),
-                    // Área de desenho.
+                    // Área de desenho (quadrada).
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          padding: const EdgeInsets.all(8),
-                          child: LayoutBuilder(
-                            builder: (BuildContext context,
-                                BoxConstraints constraints) {
-                              return GridView.builder(
-                                physics:
-                                    const NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: cols,
-                                ),
-                                itemCount: cols * rows,
-                                itemBuilder:
-                                    (BuildContext context, int index) {
-                                  final bool inFigure = _mask[index];
-                                  return GestureDetector(
-                                    onTap: () => _paint(index),
-                                    child: Container(
-                                      margin: const EdgeInsets.all(0.5),
-                                      decoration: BoxDecoration(
-                                        color: inFigure
-                                            ? (_cells[index] ?? Colors.white)
-                                            : Colors.transparent,
-                                        border: inFigure
-                                            ? Border.all(
-                                                color: Colors.black12,
-                                                width: 0.5)
-                                            : null,
+                      child: Center(
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: Container(
+                            margin: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: const <BoxShadow>[
+                                BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 8,
+                                    offset: Offset(0, 3)),
+                              ],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: LayoutBuilder(
+                              builder: (BuildContext context,
+                                  BoxConstraints constraints) {
+                                final double side = constraints.maxWidth;
+                                return GestureDetector(
+                                  onTapDown: (TapDownDetails d) =>
+                                      _paintAt(d.localPosition, side),
+                                  onPanStart: (DragStartDetails d) =>
+                                      _paintAt(d.localPosition, side),
+                                  onPanUpdate: (DragUpdateDetails d) =>
+                                      _paintAt(d.localPosition, side),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: <Widget>[
+                                      // Camada de pintura.
+                                      CustomPaint(
+                                        painter: _PaintLayer(
+                                            cells: _cells, grid: grid),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+                                      // Contorno por cima.
+                                      IgnorePointer(
+                                        child: Image.asset(
+                                          _asset,
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (_, __, ___) =>
+                                              const SizedBox.shrink(),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -223,9 +208,8 @@ class _ColoringGameScreenState extends State<ColoringGameScreen> {
                             color: c,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: _selected == c
-                                  ? Colors.black
-                                  : Colors.white,
+                              color:
+                                  _selected == c ? Colors.black : Colors.white,
                               width: 3,
                             ),
                           ),
@@ -240,6 +224,34 @@ class _ColoringGameScreenState extends State<ColoringGameScreen> {
       ),
     );
   }
+}
+
+/// Desenha as células pintadas (camada de baixo).
+class _PaintLayer extends CustomPainter {
+  _PaintLayer({required this.cells, required this.grid});
+
+  final List<Color?> cells;
+  final int grid;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double cell = size.width / grid;
+    final Paint p = Paint();
+    for (int i = 0; i < cells.length; i++) {
+      final Color? c = cells[i];
+      if (c == null) continue;
+      final int col = i % grid;
+      final int row = i ~/ grid;
+      p.color = c;
+      canvas.drawRect(
+        Rect.fromLTWH(col * cell, row * cell, cell + 0.5, cell + 0.5),
+        p,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PaintLayer old) => true;
 }
 
 class _SideButton extends StatelessWidget {
