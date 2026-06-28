@@ -55,3 +55,36 @@ jobs:
       - name: Deploy no GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  # Plano B: APK para instalar direto no Android (não depende do Pages).
+  android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Gera scaffolding android (não toca em lib/)
+        run: flutter create . --platforms=android --project-name educa_games
+
+      - name: Dependências
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Sobe o APK como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: educa-games-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
